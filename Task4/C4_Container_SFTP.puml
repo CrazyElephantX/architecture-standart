@@ -1,0 +1,57 @@
+@startuml C4_Container_SFTP
+!include <C4/C4_Container>
+
+title Банк «Стандарт» - система синхронизации ставок
+
+SHOW_PERSON_OUTLINE()
+LAYOUT_WITH_LEGEND()
+
+Person(manager, "Менеджер ставок", "Управление синхронизацией")
+
+System_Boundary(rate_system_boundary, "Система управления ставками") {
+    Container("ui_mf_host", "Module Federation Host", "JavaScript, React, Module Federation Host", "frontend\nbuild-time compositor")
+    Container(rate_db, "Rate Database", "MS SQL", "Хранилище ставок")
+    Container(rate_api, "Rate API", "REST API", "Доступ к ставкам")
+}
+
+System_Boundary(sftp_boundary, "SFTP Export Service") {
+    Container(sftp_scheduler, "SFTP Scheduler", "Java/Go", "Запуск синхронизации по графику")
+    Container(file_generator, "File Generator", "Java/Go", "Формирование CSV/JSON файла")
+    Container(sftp_client, "SFTP Client", "Java/Go", "SFTP протокол с key-based auth")
+    Container(retry_engine, "Retry Engine", "Java/Go", "Управление повторными попытками")
+    Container(sync_logger, "Sync History Logger", "Java/Go", "Логирование в БД")
+    Container(alert_manager, "Alert Manager", "Java/Go", "Отправка уведомлений")
+    Container(sync_db, "Sync History DB", "MS SQL", "История синхронизаций")
+    Container(config_storage, "Configuration Storage", "MS SQL/Properties", "Параметры SFTP, графика, retry")
+}
+
+System_Boundary(monitoring_boundary, "Система мониторинга") {
+    Container(sync_dashboard, "Sync Status Dashboard", "Web UI", "Отображение статуса")
+    Container(alert_system, "Alert System", "Email/Slack", "Отправка уведомлений")
+    Container(metrics, "Metrics Collection", "Prometheus", "Сбор метрик")
+}
+
+System_Boundary(external, "Внешние системы") {
+    Container(partner_sftp, "SFTP Сервер партнёра", "SFTP", "Хранилище файлов партнёра")
+}
+
+
+Rel(manager, ui_mf_host, "Управляет ставками и графиком синхронизации")
+Rel(ui_mf_host, rate_api, "REST /rates работа со ставками")
+Rel(sftp_scheduler, config_storage, "READ schedule & SFTP config")
+Rel(sftp_scheduler, file_generator, "Trigger file generation")
+Rel(file_generator, rate_api, "GET /rates (актуальные ставки)")
+Rel(rate_api, rate_db, "SELECT rates")
+Rel(file_generator, sync_logger, "Log file creation")
+Rel(file_generator, sftp_client, "Send file for upload")
+Rel(sftp_client, partner_sftp, "SFTP PUT /rates_2025-12-21.csv")
+Rel(sftp_client, retry_engine, "On error → trigger retry")
+Rel(retry_engine, sftp_client, "Retry connection")
+Rel(sync_logger, sync_db, "INSERT sync_history")
+Rel(retry_engine, alert_manager, "On final failure")
+Rel(alert_manager, alert_system, "Send alert")
+Rel(sync_logger, metrics, "Update sync metrics")
+Rel(sync_dashboard, sync_db, "Query sync history")
+Rel(sync_dashboard, metrics, "Query metrics")
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml C4_System_Context
+!include <C4/C4_Context>
+
+title Депозиты АБС банка "Стандарт"
+
+SHOW_PERSON_OUTLINE()
+LAYOUT_WITH_LEGEND()
+
+Person(customer_online, "Клиент (интернет-банк)", "Авторизованный клиент")
+Person(customer_new, "Новый клиент (сайт)", "Клиент для привлечения")
+Person(manager_cc, "Менеджер кол-центра", "Консультирование")
+
+
+System_Boundary(system, "АБС «Банк Стандарт»", "ABS") {
+    Person(manager_bo, "Менеджер бэк-офиса", "Обработка заявок")
+    Person(manager_rates, "Менеджер ставок", "Управление ставками")
+    System(internet_bank, "Интернет-банк", "Подача заявок, отображение ставок")
+    System(website, "Сайт банка", "Привлечение новых клиентов")
+    System(abs, "АБС (Core)", "Управление счетами, депозитами, СМС")
+    System(rate_system, "Система управления ставками", "Расчёт и хранение ставок")
+    System(risk_system, "Система оценки кредитного риска", "Анализ риска банка")
+    System(cc_system, "Система кол-центра", "Управление обращениями")
+}
+
+System_Ext(partner_cc, "Партнёрский кол-центр", "Внешний провайдер")
+System_Ext(external_bank, "ЦБ РФ", "Ставка рефинансирования")
+
+Rel(customer_online, internet_bank, "Подаёт заявку, видит ставки")
+Rel(customer_new, website, "Подаёт заявку, видит ставки")
+Rel(manager_bo, abs, "Обработка заявок, согласование")
+Rel(manager_cc, cc_system, "Консультирование, заявки")
+Rel(manager_cc, rate_system, "Просмотр ставок")
+Rel(manager_rates, rate_system, "Управление ставками")
+Rel(partner_cc, rate_system, "Получение ставок (SFTP)")
+Rel(internet_bank, rate_system, "Загрузка ставок")
+Rel(internet_bank, abs, "Подача заявок (асинхронно)")
+Rel(website, cc_system, "Передача заявок")
+Rel(abs, customer_online, "СМС-уведомления")
+Rel(rate_system,external_bank, "Ставка ЦБ (ежедневно)")
+Rel(rate_system,risk_system, "Уровень кредитного риска")
+Rel(cc_system, abs, "Связь с АБС")
+
+@enduml
