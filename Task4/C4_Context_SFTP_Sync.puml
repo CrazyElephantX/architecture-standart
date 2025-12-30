@@ -1,0 +1,24 @@
+@startuml C4_Context_SFTP_Sync
+!include <C4/C4_Context>
+
+title Банк "Стандарт" - синхронизация ставок
+
+SHOW_PERSON_OUTLINE()
+LAYOUT_WITH_LEGEND()
+
+Person(manager, "Менеджер ставок", "Управление синхронизацией")
+Person(partner_staff, "Сотрудники партнёра", "Использование ставок")
+
+System(rate_system, "Система управления ставками", "Хранение и расчёт ставок")
+System(sftp_service, "SFTP Export Service (НОВАЯ)", "Синхронизация ставок с партнёром")
+System(partner_system, "Система партнёра", "Внешняя система кол-центра")
+System(monitoring, "Система мониторинга", "Отслеживание статуса синхронизации")
+
+Rel(manager, rate_system, "Управляет ставками и графиком синхронизации")
+Rel(rate_system, sftp_service, "Предоставляет актуальные ставки")
+Rel(sftp_service, partner_system, "Отправляет ставки через SFTP (ежедневно)")
+Rel(partner_staff, partner_system, "Просматривают ставки")
+Rel(sftp_service, monitoring, "Отправляет логи синхронизации")
+Rel(manager, monitoring, "Мониторит статус синхронизации")
+
+@enduml
